@@ -10,16 +10,18 @@ type Props = {
   navigation: StackNavigationProp<any, any>;
 };
 
-function AddScreen({ navigation }: Props) {
+function AddScreen({ route, navigation }: Props) {
+  const { uid } = route.params;
+
   return (
     <Formik
       initialValues={{ title: "", description: "" }}
       onSubmit={async (values, { resetForm }) => {
         if (values.title !== "" && values.description !== "") {
           try {
-            navigation.navigate("Home");
+            navigation.navigate("Home", { reload: true });
             await Axios.post(
-              "https://tasktrackerapi.herokuapp.com/tasks",
+              `https://tasktrackerapi.herokuapp.com/users/${uid}/tasks`,
               values
             );
             resetForm();

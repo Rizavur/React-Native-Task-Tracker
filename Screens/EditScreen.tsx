@@ -13,18 +13,20 @@ type Props = {
 };
 
 function EditScreen({ route, navigation }: Props) {
+  const { title, description, tid, uid } = route.params;
+
   return (
     <Formik
       initialValues={{
-        title: route.params.title,
-        description: route.params.description,
+        title: title,
+        description: description,
       }}
       onSubmit={async (values, { resetForm }) => {
         if (values.title !== "" && values.description !== "") {
           try {
-            navigation.navigate("Home");
+            navigation.navigate("Home", { reload: true });
             await Axios.patch(
-              `https://tasktrackerapi.herokuapp.com/tasks/${route.params.id}`,
+              `https://tasktrackerapi.herokuapp.com/users/${uid}/tasks/${tid}`,
               values
             );
             resetForm();

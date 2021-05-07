@@ -12,11 +12,16 @@ const Stack = createStackNavigator();
 function AppNavigator() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Home">
+      <Stack.Navigator>
+        <Stack.Screen
+          name="Sign In"
+          component={SignInScreen}
+          options={{ title: "Sign In", headerLeft: () => null }}
+        />
         <Stack.Screen
           name="Home"
           component={HomeScreen}
-          options={({ navigation }) => ({
+          options={({ navigation, route }) => ({
             title: "My Tasks",
             headerRight: () => {
               return (
@@ -25,23 +30,24 @@ function AppNavigator() {
                   type="material"
                   style={{ fontSize: 30, paddingRight: 20 }}
                   onPress={() => {
-                    navigation.navigate("Add");
+                    const uid = route.params.user.id;
+                    navigation.navigate("Add", { uid });
                   }}
                 />
               );
             },
-            // headerLeft: () => {
-            //   return (
-            //     <SimpleLineIcons
-            //       name="logout"
-            //       type="material"
-            //       style={{ fontSize: 20, paddingLeft: 20 }}
-            //       onPress={() => {
-            //         navigation.navigate("Sign In");
-            //       }}
-            //     />
-            //   );
-            // },
+            headerLeft: () => {
+              return (
+                <SimpleLineIcons
+                  name="logout"
+                  type="material"
+                  style={{ fontSize: 20, paddingLeft: 20 }}
+                  onPress={() => {
+                    navigation.navigate("Sign In");
+                  }}
+                />
+              );
+            },
           })}
         />
         <Stack.Screen
@@ -54,11 +60,6 @@ function AppNavigator() {
           component={EditScreen}
           options={{ title: "Edit" }}
         />
-        {/* <Stack.Screen
-          name="Sign In"
-          component={SignInScreen}
-          options={{ title: "Sign In", headerLeft: () => null }}
-        /> */}
       </Stack.Navigator>
     </NavigationContainer>
   );
