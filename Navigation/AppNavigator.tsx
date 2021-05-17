@@ -2,10 +2,10 @@ import React from "react";
 import { Ionicons, SimpleLineIcons } from "@expo/vector-icons";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
-import HomeScreen from "../Screens/HomeScreen";
-import AddScreen from "../Screens/AddTaskScreen";
-import SignInScreen from "../Screens/SignInScreen";
-import EditScreen from "../Screens/EditScreen";
+import HomeScreen from "../screens/HomeScreen";
+import AddScreen from "../screens/AddTaskScreen";
+import SignInScreen from "../screens/SignInScreen";
+import EditScreen from "../screens/EditScreen";
 
 const Stack = createStackNavigator();
 
@@ -16,12 +16,12 @@ function AppNavigator() {
         <Stack.Screen
           name="Sign In"
           component={SignInScreen}
-          options={{ title: "Sign In", headerLeft: () => null }}
+          options={{ title: "Log In", headerLeft: () => null }}
         />
         <Stack.Screen
           name="Home"
           component={HomeScreen}
-          options={({ navigation, route }) => ({
+          options={({ navigation, route: { params } }) => ({
             title: "My Tasks",
             headerRight: () => {
               return (
@@ -30,7 +30,10 @@ function AppNavigator() {
                   type="material"
                   style={{ fontSize: 30, paddingRight: 20 }}
                   onPress={() => {
-                    const uid = route.params.user.id;
+                    let uid = "";
+                    if (params !== undefined) {
+                      uid = params.user.id;
+                    }
                     navigation.navigate("Add", { uid });
                   }}
                 />
@@ -53,12 +56,12 @@ function AppNavigator() {
         <Stack.Screen
           name="Add"
           component={AddScreen}
-          options={{ title: "Add" }}
+          options={{ title: "New Task" }}
         />
         <Stack.Screen
           name="Edit"
           component={EditScreen}
-          options={{ title: "Edit" }}
+          options={{ title: "Edit Task" }}
         />
       </Stack.Navigator>
     </NavigationContainer>

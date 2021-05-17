@@ -1,13 +1,17 @@
 import React from "react";
 import { View, Text } from "react-native";
-import styles from "../StyleSheets/Global";
+import styles from "../stylesheets/Global";
 import * as Google from "expo-google-app-auth";
-import { Button } from "react-native";
+import { Button } from "react-native-paper";
 import Axios from "axios";
+import { FontAwesome5 } from "@expo/vector-icons";
+import { StackNavigationProp } from "@react-navigation/stack";
 
-function SignInScreen({ navigation }) {
-  let user = null;
+type Props = {
+  navigation: StackNavigationProp<any, any>;
+};
 
+function SignInScreen({ navigation }: Props) {
   const signInAsync = async () => {
     try {
       const { type, user } = await Google.logInAsync({
@@ -17,7 +21,7 @@ function SignInScreen({ navigation }) {
           "27987693251-ehjmgsr13b6o5vjllvo9vufk1gcempi4.apps.googleusercontent.com",
       });
 
-      checkExisitingUser(user);
+      createUserIfNotExists(user);
 
       if (type === "success") {
         navigation.navigate("Home", { user });
@@ -27,7 +31,7 @@ function SignInScreen({ navigation }) {
     }
   };
 
-  const checkExisitingUser = async (user) => {
+  const createUserIfNotExists = async (user: object) => {
     const uid = user.id;
 
     try {
@@ -48,8 +52,24 @@ function SignInScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text>Sign In Screen</Text>
-      <Button title="Login with Google" onPress={signInAsync} />
+      <View style={{ ...styles.container, flex: 4 }}>
+        <FontAwesome5 name="angellist" size={150} color="black" />
+        <Text style={{ fontSize: 35, marginTop: 30 }}>Welcome</Text>
+        <Text style={{ fontSize: 17, marginTop: 15 }}>
+          Log in to start using Task Tracker
+        </Text>
+      </View>
+      <View style={{ ...styles.container, flex: 2, marginBottom: 20 }}>
+        <Button
+          icon="google"
+          mode="contained"
+          onPress={signInAsync}
+          color="#ff7663"
+          labelStyle={{ fontSize: 17 }}
+        >
+          Log In With Google
+        </Button>
+      </View>
     </View>
   );
 }
