@@ -16,6 +16,7 @@
     "expo-google-app-auth": "^8.1.7",
     "expo-google-sign-in": "~9.1.0",
     "expo-status-bar": "~1.0.4",
+    "firebase": "8.2.3",
     "formik": "^2.2.6",
     "react": "16.13.1",
     "react-dom": "16.13.1",
@@ -27,6 +28,7 @@
     "react-native-safe-area-context": "3.2.0",
     "react-native-screens": "~3.0.0",
     "react-native-spinkit": "^1.5.1",
+    "react-native-tiny-toast": "^1.0.7",
     "react-native-web": "~0.13.12",
     "rn-material-ui-textfield": "^1.0.4",
     "yup": "^0.32.9"

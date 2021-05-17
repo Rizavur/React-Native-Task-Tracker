@@ -2,9 +2,10 @@ import React from "react";
 import { useEffect } from "react";
 import {
   FlatList,
-  TouchableHighlight as TouchableOpacity,
+  TouchableOpacity,
   View,
   Text,
+  ScrollView,
 } from "react-native";
 import styles from "../stylesheets/Global";
 import Axios from "axios";
@@ -34,6 +35,7 @@ function HomeScreen({ route, navigation }: Props) {
 
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
+    getData();
     wait(2000).then(() => setRefreshing(false));
   }, []);
 
@@ -45,14 +47,31 @@ function HomeScreen({ route, navigation }: Props) {
     username = route.params.user.name;
   }
 
+  const convertData = (data: Object) => {
+    let convertedData: { tid: string; description: string; title: string }[] =
+      [];
+    Object.entries(data).forEach(([key, value]) =>
+      convertedData.push({
+        tid: key,
+        description: value["description"],
+        title: value["title"],
+      })
+    );
+    setData(convertedData);
+  };
+
   const getData = async () => {
-    setLoading(true);
+    refresh ? null : setLoading(true);
     try {
       const response = await Axios.get(
-        `https://tasktrackerapi.herokuapp.com/users/${uid}/tasks`
+        `https://rn-task-tracker-default-rtdb.asia-southeast1.firebasedatabase.app/users/uid/${uid}/tasks.json`
       );
 
-      setData(response.data);
+      if (response.data === null) {
+        setData([]);
+      } else {
+        convertData(response.data);
+      }
     } catch (e) {
       console.log("Error occurred");
     }
@@ -75,7 +94,7 @@ function HomeScreen({ route, navigation }: Props) {
         onPress: async () => {
           try {
             await Axios.delete(
-              `https://tasktrackerapi.herokuapp.com/users/${uid}/tasks/${tid}`
+              `https://rn-task-tracker-default-rtdb.asia-southeast1.firebasedatabase.app/users/uid/${uid}/tasks/${tid}.json`
             );
             getData();
             setRefresh(!refresh);
@@ -109,7 +128,7 @@ function HomeScreen({ route, navigation }: Props) {
     }, [])
   );
 
-  function WelcomeMessage({ username }: String) {
+  function WelcomeMessage() {
     return (
       <View
         style={{
@@ -132,9 +151,15 @@ function HomeScreen({ route, navigation }: Props) {
     );
   }
 
-  function ShowEmptyData({ username }) {
+  function ShowEmptyData() {
     return (
-      <View style={{ flex: 1 }}>
+      <ScrollView
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        style={{ flex: 1 }}
+        contentContainerStyle={{ flexGrow: 1 }}
+      >
         <WelcomeMessage username={username} />
         <View style={styles.container}>
           <Text style={{ fontSize: 16 }}>
@@ -144,11 +169,11 @@ function HomeScreen({ route, navigation }: Props) {
             Click on the "+" button to add a new task.
           </Text>
         </View>
-      </View>
+      </ScrollView>
     );
   }
 
-  function ShowListData({ username }: String) {
+  function ShowListData() {
     return (
       <View style={{ flex: 1 }}>
         <FlatList
@@ -166,6 +191,7 @@ function HomeScreen({ route, navigation }: Props) {
                 onPress={() =>
                   handleEdit(item.tid, item.title, item.description)
                 }
+                activeOpacity={0.7}
               >
                 <View>
                   <View style={{ flex: 1, flexDirection: "row" }}>
@@ -204,9 +230,9 @@ function HomeScreen({ route, navigation }: Props) {
       {isLoading ? (
         <ShowLoadingSpinner />
       ) : !data.length ? (
-        <ShowEmptyData username={username} />
+        <ShowEmptyData />
       ) : (
-        <ShowListData username={username} />
+        <ShowListData />
       )}
     </View>
   );

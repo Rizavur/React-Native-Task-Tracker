@@ -36,12 +36,12 @@ function Taskform({
           navigation.navigate("Home", { reload: true });
           if (tid === "") {
             await Axios.post(
-              `https://tasktrackerapi.herokuapp.com/users/${uid}/tasks/${tid}`,
+              `https://rn-task-tracker-default-rtdb.asia-southeast1.firebasedatabase.app/users/uid/${uid}/tasks/${tid}.json`,
               values
             );
           } else {
             await Axios.patch(
-              `https://tasktrackerapi.herokuapp.com/users/${uid}/tasks/${tid}`,
+              `https://rn-task-tracker-default-rtdb.asia-southeast1.firebasedatabase.app/users/uid/${uid}/tasks/${tid}.json`,
               values
             );
           }

@@ -6,6 +6,7 @@ import { Button } from "react-native-paper";
 import Axios from "axios";
 import { FontAwesome5 } from "@expo/vector-icons";
 import { StackNavigationProp } from "@react-navigation/stack";
+import Toast from "react-native-tiny-toast";
 
 type Props = {
   navigation: StackNavigationProp<any, any>;
@@ -25,6 +26,7 @@ function SignInScreen({ navigation }: Props) {
 
       if (type === "success") {
         navigation.navigate("Home", { user });
+        Toast.show("Log in successful");
       }
     } catch (error) {
       console.log("Error with login", error);
@@ -36,16 +38,16 @@ function SignInScreen({ navigation }: Props) {
 
     try {
       const response = await Axios.get(
-        `https://tasktrackerapi.herokuapp.com/users/${uid}/`
+        `https://rn-task-tracker-default-rtdb.asia-southeast1.firebasedatabase.app/users/${uid}.json`
       );
-      if (response.statusText === undefined) {
-        await Axios.post("https://tasktrackerapi.herokuapp.com/users", { uid });
+
+      if (response.statusText === null) {
+        await Axios.put(
+          "https://rn-task-tracker-default-rtdb.asia-southeast1.firebasedatabase.app/users.json",
+          { uid }
+        );
       }
-      console.log(response);
     } catch (error) {
-      if (error.response.status === 404) {
-        await Axios.post("https://tasktrackerapi.herokuapp.com/users", { uid });
-      }
       console.log(error);
     }
   };

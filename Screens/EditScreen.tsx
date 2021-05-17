@@ -11,24 +11,19 @@ type Props = {
   navigation: StackNavigationProp<any, any>;
 };
 
-type RouteParams = {
-  title: String;
-  description: String;
-  tid: String;
-  uid: String;
-};
-
 function EditScreen({ route, navigation }: Props) {
-  const { title, description, tid, uid }: RouteParams = route.params;
+  const { params } = route;
 
   return (
-    <Taskform
-      navigation={navigation}
-      initialTitle={title}
-      initialDescription={description}
-      uid={uid}
-      tid={tid}
-    />
+    params && (
+      <Taskform
+        navigation={navigation}
+        initialTitle={params.title}
+        initialDescription={params.description}
+        uid={params.uid}
+        tid={params.tid}
+      />
+    )
   );
 }
 

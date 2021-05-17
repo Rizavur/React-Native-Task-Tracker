@@ -9,16 +9,18 @@ type Props = {
 };
 
 function AddScreen({ route, navigation }: Props) {
-  const { uid } = route.params;
+  const { params } = route;
 
   return (
-    <Taskform
-      navigation={navigation}
-      initialTitle=""
-      initialDescription=""
-      uid={uid}
-      tid=""
-    />
+    params && (
+      <Taskform
+        navigation={navigation}
+        initialTitle=""
+        initialDescription=""
+        uid={params.uid}
+        tid=""
+      />
+    )
   );
 }
 

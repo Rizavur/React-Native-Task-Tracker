@@ -6,7 +6,7 @@ import HomeScreen from "../screens/HomeScreen";
 import AddScreen from "../screens/AddTaskScreen";
 import SignInScreen from "../screens/SignInScreen";
 import EditScreen from "../screens/EditScreen";
-
+import Toast from "react-native-tiny-toast";
 const Stack = createStackNavigator();
 
 function AppNavigator() {
@@ -47,6 +47,7 @@ function AppNavigator() {
                   style={{ fontSize: 20, paddingLeft: 20 }}
                   onPress={() => {
                     navigation.navigate("Sign In");
+                    Toast.show("Log out successful");
                   }}
                 />
               );
