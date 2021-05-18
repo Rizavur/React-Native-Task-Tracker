@@ -1,7 +1,8 @@
 import React from "react";
 import { StackNavigationProp } from "@react-navigation/stack";
-import Taskform from "../components/taskform";
+import Taskform from "../components/Taskform";
 import { RouteProp } from "@react-navigation/native";
+import moment from "moment";
 
 type Props = {
   route: RouteProp<any, any>;
@@ -19,6 +20,7 @@ function AddScreen({ route, navigation }: Props) {
         initialDescription=""
         uid={params.uid}
         tid=""
+        initialDate={moment().toDate()}
       />
     )
   );

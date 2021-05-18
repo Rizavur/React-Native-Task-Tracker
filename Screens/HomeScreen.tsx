@@ -6,6 +6,7 @@ import {
   View,
   Text,
   ScrollView,
+  StyleSheet,
 } from "react-native";
 import styles from "../stylesheets/Global";
 import Axios from "axios";
@@ -17,6 +18,7 @@ import { RouteProp, useFocusEffect } from "@react-navigation/native";
 import { Grid } from "react-native-animated-spinkit";
 import { BackHandler } from "react-native";
 import { RefreshControl } from "react-native";
+import moment from "moment";
 
 type Props = {
   route: RouteProp<any, any>;
@@ -28,6 +30,24 @@ function HomeScreen({ route, navigation }: Props) {
   const [data, setData] = useState<any[]>([]);
   const [refresh, setRefresh] = useState<boolean>(false);
   const [refreshing, setRefreshing] = React.useState(false);
+  const [liveDate, setLiveDate] = useState(
+    moment().format("dddd").toString() +
+      ", " +
+      moment().format("MMMM Do YYYY, h:mm:ss a").toString()
+  );
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setLiveDate(
+        moment().format("dddd").toString() +
+          ", " +
+          moment().format("MMMM Do YYYY, h:mm:ss a").toString()
+      );
+    }, 60);
+    return () => {
+      clearInterval(timer);
+    };
+  }, []);
 
   const wait = (timeout: number) => {
     return new Promise((resolve) => setTimeout(resolve, timeout));
@@ -48,13 +68,18 @@ function HomeScreen({ route, navigation }: Props) {
   }
 
   const convertData = (data: Object) => {
-    let convertedData: { tid: string; description: string; title: string }[] =
-      [];
+    let convertedData: {
+      tid: string;
+      description: string;
+      title: string;
+      date: Date;
+    }[] = [];
     Object.entries(data).forEach(([key, value]) =>
       convertedData.push({
         tid: key,
         description: value["description"],
         title: value["title"],
+        date: new Date(value["date"]),
       })
     );
     setData(convertedData);
@@ -106,12 +131,18 @@ function HomeScreen({ route, navigation }: Props) {
     ]);
   };
 
-  const handleEdit = (tid: string, title: string, description: string) => {
+  const handleEdit = (
+    tid: string,
+    title: string,
+    description: string,
+    date: Date
+  ) => {
     navigation.navigate("Edit", {
       tid: tid,
       title: title,
       description: description,
       uid: uid,
+      date: date,
     });
   };
 
@@ -139,6 +170,7 @@ function HomeScreen({ route, navigation }: Props) {
         }}
       >
         <Text style={{ fontSize: 20 }}>Hi, {username}</Text>
+        <Text style={{ paddingTop: 10 }}>It's {liveDate}</Text>
       </View>
     );
   }
@@ -189,7 +221,7 @@ function HomeScreen({ route, navigation }: Props) {
               <TouchableOpacity
                 style={styles.item}
                 onPress={() =>
-                  handleEdit(item.tid, item.title, item.description)
+                  handleEdit(item.tid, item.title, item.description, item.date)
                 }
                 activeOpacity={0.7}
               >
@@ -216,6 +248,17 @@ function HomeScreen({ route, navigation }: Props) {
                   >
                     <Text style={styles.itemDesc}>{item.description}</Text>
                   </View>
+                  <View
+                    style={{
+                      flex: 1,
+                      marginTop: 20,
+                      marginBottom: -10,
+                    }}
+                  >
+                    <Text style={customStyles.date}>
+                      By {moment(item.date).format("Do MMM YYYY").toString()}
+                    </Text>
+                  </View>
                 </View>
               </TouchableOpacity>
             );
@@ -237,5 +280,14 @@ function HomeScreen({ route, navigation }: Props) {
     </View>
   );
 }
+
+const customStyles = StyleSheet.create({
+  date: {
+    flex: 1,
+    color: "white",
+    textAlign: "right",
+    // backgroundColor: "white",
+  },
+});
 
 export default HomeScreen;
