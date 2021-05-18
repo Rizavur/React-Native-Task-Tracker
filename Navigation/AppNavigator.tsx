@@ -7,7 +7,20 @@ import AddScreen from "../screens/AddTaskScreen";
 import SignInScreen from "../screens/SignInScreen";
 import EditScreen from "../screens/EditScreen";
 import Toast from "react-native-tiny-toast";
+
 const Stack = createStackNavigator();
+
+interface paramsType {
+  reload: boolean;
+  user: {
+    email: string;
+    familyName: string;
+    givenName: string;
+    id: string;
+    name: string;
+    photoURL: string;
+  };
+}
 
 function AppNavigator() {
   return (
@@ -30,11 +43,12 @@ function AppNavigator() {
                   type="material"
                   style={{ fontSize: 30, paddingRight: 20 }}
                   onPress={() => {
-                    let uid = "";
+                    let userId = "";
                     if (params !== undefined) {
-                      uid = params.user.id;
+                      userId = (params as paramsType).user.id;
                     }
-                    navigation.navigate("Add", { uid });
+
+                    navigation.navigate("Add", { userId });
                   }}
                 />
               );

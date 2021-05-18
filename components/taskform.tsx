@@ -1,4 +1,4 @@
-import { Formik } from "formik";
+import { Formik, FormikState } from "formik";
 import React, { useState } from "react";
 import {
   View,
@@ -8,68 +8,89 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
+  StyleSheet,
 } from "react-native";
-import { Button, TextInput } from "react-native-paper";
-import { OutlinedTextField } from "rn-material-ui-textfield";
 import Axios from "axios";
-import { StackNavigationProp } from "@react-navigation/stack";
 import * as yup from "yup";
-import DateTimePicker from "@react-native-community/datetimepicker";
 import moment from "moment";
+import { Button } from "react-native-paper";
+import { OutlinedTextField } from "rn-material-ui-textfield";
+import { StackNavigationProp } from "@react-navigation/stack";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
-type Props = {
+import { GoogleDetails } from "../constants/GoogleDetails";
+import { Colors } from "../constants/Colors";
+
+interface PropsType {
   navigation: StackNavigationProp<any, any>;
-  initialTitle: String;
-  initialDescription: String;
+  initialTitle: string;
+  initialDescription: string;
   initialDate: Date;
-  uid: String;
-  tid: String;
-};
+  userId: string;
+  taskId: string;
+}
+
+interface ValuesType {
+  title: string;
+  description: string;
+  date: Date;
+}
 
 const taskSchema = yup.object().shape({
   title: yup.string().required("Required").max(20),
   description: yup.string().required("Required"),
 });
 
-function Taskform({
-  navigation,
-  initialTitle,
-  initialDescription,
-  initialDate,
-  uid,
-  tid,
-}: Props) {
+const Taskform = (props: PropsType) => {
+  const {
+    navigation,
+    initialTitle,
+    initialDescription,
+    initialDate,
+    userId,
+    taskId,
+  } = props;
+
   const [date, setDate] = useState(initialDate);
   const [isPickerVisible, setIsPickerVisible] = useState(false);
+
+  const submitToFirebase = async (
+    values: ValuesType,
+    resetForm: (
+      nextState?: Partial<FormikState<ValuesType>> | undefined
+    ) => void
+  ) => {
+    try {
+      navigation.navigate("Home", { reload: true });
+      values.date = date;
+      if (taskId === "") {
+        await Axios.post(
+          GoogleDetails.firebaseStorage +
+            `/userId/${userId}/tasks/${taskId}.json`,
+          values
+        );
+      } else {
+        await Axios.patch(
+          GoogleDetails.firebaseStorage +
+            `/userId/${userId}/tasks/${taskId}.json`,
+          values
+        );
+      }
+      resetForm();
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   return (
     <Formik
       initialValues={{
         title: initialTitle,
         description: initialDescription,
+        date: date,
       }}
       validationSchema={taskSchema}
-      onSubmit={async (values, { resetForm }) => {
-        try {
-          navigation.navigate("Home", { reload: true });
-          values.date = date;
-          if (tid === "") {
-            await Axios.post(
-              `https://rn-task-tracker-default-rtdb.asia-southeast1.firebasedatabase.app/users/uid/${uid}/tasks/${tid}.json`,
-              values
-            );
-          } else {
-            await Axios.patch(
-              `https://rn-task-tracker-default-rtdb.asia-southeast1.firebasedatabase.app/users/uid/${uid}/tasks/${tid}.json`,
-              values
-            );
-          }
-
-          resetForm();
-        } catch (error) {
-          console.log(error);
-        }
-      }}
+      onSubmit={(values, { resetForm }) => submitToFirebase(values, resetForm)}
     >
       {({
         handleChange,
@@ -92,11 +113,11 @@ function Taskform({
                   onBlur={handleBlur("title")}
                   value={values.title}
                   label="Title"
-                  tintColor="#003e7d"
+                  tintColor={Colors.primary}
                   maxLength={20}
                   characterRestriction={20}
                   animationDuration={175}
-                  error={touched.title && errors.title}
+                  error={touched.title ? errors.title : undefined}
                 />
                 <View style={{ height: 20 }}></View>
                 <OutlinedTextField
@@ -105,34 +126,20 @@ function Taskform({
                   value={values.description}
                   label="Description"
                   multiline={true}
-                  tintColor="#003e7d"
+                  tintColor={Colors.primary}
                   animationDuration={175}
-                  error={touched.description && errors.description}
+                  error={touched.description ? errors.description : undefined}
                 />
                 <View style={{ height: 20 }}></View>
                 <TouchableOpacity
-                  style={{
-                    borderColor: "#979897",
-                    borderWidth: 1,
-                    borderRadius: 5,
-                  }}
+                  style={styles.datePickerTouchable}
                   onPress={() => {
                     setIsPickerVisible(!isPickerVisible);
                   }}
                   activeOpacity={0.5}
                 >
-                  <View style={{ height: 56, justifyContent: "center" }}>
-                    <Text
-                      style={{
-                        position: "absolute",
-                        left: 6,
-                        top: -10,
-                        color: "#979897",
-                        backgroundColor: "#f1f2f1",
-                        fontSize: 12.5,
-                        paddingHorizontal: 4,
-                      }}
-                    >
+                  <View style={styles.datePickerTouchableContainer}>
+                    <Text style={styles.datePickerTouchableHeader}>
                       Deadline
                     </Text>
                     <Text
@@ -169,13 +176,8 @@ function Taskform({
                     handleSubmit();
                   }}
                   mode="contained"
-                  color="#003e7d"
-                  style={{
-                    alignSelf: "stretch",
-                    margin: 20,
-                    paddingHorizontal: 5,
-                    paddingVertical: 5,
-                  }}
+                  color={Colors.primary}
+                  style={styles.submitButton}
                 >
                   Submit
                 </Button>
@@ -186,6 +188,30 @@ function Taskform({
       )}
     </Formik>
   );
-}
+};
+
+const styles = StyleSheet.create({
+  datePickerTouchable: {
+    borderColor: "#979897",
+    borderWidth: 1,
+    borderRadius: 5,
+  },
+  datePickerTouchableContainer: { height: 56, justifyContent: "center" },
+  datePickerTouchableHeader: {
+    position: "absolute",
+    left: 6,
+    top: -10,
+    color: "#979897",
+    backgroundColor: Colors.background,
+    fontSize: 12.5,
+    paddingHorizontal: 4,
+  },
+  submitButton: {
+    alignSelf: "stretch",
+    margin: 20,
+    paddingHorizontal: 5,
+    paddingVertical: 5,
+  },
+});
 
 export default Taskform;

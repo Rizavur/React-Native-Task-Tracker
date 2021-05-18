@@ -1,5 +1,4 @@
-import React from "react";
-import { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FlatList,
   TouchableOpacity,
@@ -7,35 +6,45 @@ import {
   Text,
   ScrollView,
   StyleSheet,
+  Alert,
+  RefreshControl,
+  BackHandler,
 } from "react-native";
-import styles from "../stylesheets/Global";
 import Axios from "axios";
 import { Entypo } from "@expo/vector-icons";
-import { useState } from "react";
-import { Alert } from "react-native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RouteProp, useFocusEffect } from "@react-navigation/native";
-import { Grid } from "react-native-animated-spinkit";
-import { BackHandler } from "react-native";
-import { RefreshControl } from "react-native";
 import moment from "moment";
 
-type Props = {
+import { Colors } from "../constants/Colors";
+import { GoogleDetails } from "../constants/GoogleDetails";
+import WelcomeMessage from "../components/WelcomeMessage";
+import ShowLoadingSpinner from "../components/LoadingSpinner";
+
+interface PropsType {
   route: RouteProp<any, any>;
   navigation: StackNavigationProp<any, any>;
-};
+}
 
-function HomeScreen({ route, navigation }: Props) {
+interface TaskDataType {
+  taskId: string;
+  description: string;
+  title: string;
+  date: Date;
+}
+
+const HomeScreen = ({ route, navigation }: PropsType) => {
   const [isLoading, setLoading] = useState<boolean>(true);
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<TaskDataType[]>([]);
   const [refresh, setRefresh] = useState<boolean>(false);
   const [refreshing, setRefreshing] = React.useState(false);
-  const [liveDate, setLiveDate] = useState(
+  const [liveDate, setLiveDate] = useState<string>(
     moment().format("dddd").toString() +
       ", " +
       moment().format("MMMM Do YYYY, h:mm:ss a").toString()
   );
 
+  // Update time for every second in greeting at the top
   useEffect(() => {
     const timer = setInterval(() => {
       setLiveDate(
@@ -49,6 +58,11 @@ function HomeScreen({ route, navigation }: Props) {
     };
   }, []);
 
+  useEffect(() => {
+    getData();
+  }, [route]);
+
+  // Functions for swipe to refresh
   const wait = (timeout: number) => {
     return new Promise((resolve) => setTimeout(resolve, timeout));
   };
@@ -59,24 +73,21 @@ function HomeScreen({ route, navigation }: Props) {
     wait(2000).then(() => setRefreshing(false));
   }, []);
 
-  let uid = "";
+  // Set userId and username
+  let userId = "";
   let username = "";
 
   if (route.params !== undefined) {
-    uid = route.params.user.id;
+    userId = route.params.user.id;
     username = route.params.user.name;
   }
 
+  // Convert data into array from task item object in firebase
   const convertData = (data: Object) => {
-    let convertedData: {
-      tid: string;
-      description: string;
-      title: string;
-      date: Date;
-    }[] = [];
+    let convertedData: TaskDataType[] = [];
     Object.entries(data).forEach(([key, value]) =>
       convertedData.push({
-        tid: key,
+        taskId: key,
         description: value["description"],
         title: value["title"],
         date: new Date(value["date"]),
@@ -89,7 +100,7 @@ function HomeScreen({ route, navigation }: Props) {
     refresh ? null : setLoading(true);
     try {
       const response = await Axios.get(
-        `https://rn-task-tracker-default-rtdb.asia-southeast1.firebasedatabase.app/users/uid/${uid}/tasks.json`
+        GoogleDetails.firebaseStorage + `/userId/${userId}/tasks.json`
       );
 
       if (response.data === null) {
@@ -103,11 +114,7 @@ function HomeScreen({ route, navigation }: Props) {
     setLoading(false);
   };
 
-  useEffect(() => {
-    getData();
-  }, [route]);
-
-  const handleDelete = (tid: string) => {
+  const handleDelete = (taskId: string) => {
     Alert.alert("Delete task?", "Are you sure you want to delete this task?", [
       {
         text: "Cancel",
@@ -119,33 +126,30 @@ function HomeScreen({ route, navigation }: Props) {
         onPress: async () => {
           try {
             await Axios.delete(
-              `https://rn-task-tracker-default-rtdb.asia-southeast1.firebasedatabase.app/users/uid/${uid}/tasks/${tid}.json`
+              GoogleDetails.firebaseStorage +
+                `/userId/${userId}/tasks/${taskId}.json`
             );
             getData();
             setRefresh(!refresh);
           } catch (error) {
-            console.log(`Deletion error: ${error}`);
+            console.log("Deletion error: " + error);
           }
         },
       },
     ]);
   };
 
-  const handleEdit = (
-    tid: string,
-    title: string,
-    description: string,
-    date: Date
-  ) => {
+  const handleEdit = (item: TaskDataType) => {
     navigation.navigate("Edit", {
-      tid: tid,
-      title: title,
-      description: description,
-      uid: uid,
-      date: date,
+      taskId: item.taskId,
+      title: item.title,
+      description: item.description,
+      userId: userId,
+      date: item.date,
     });
   };
 
+  // Prevent hardware back button in android so that cannot pop from home to sign in page
   useFocusEffect(
     React.useCallback(() => {
       const onBackPress = () => {
@@ -159,31 +163,7 @@ function HomeScreen({ route, navigation }: Props) {
     }, [])
   );
 
-  function WelcomeMessage() {
-    return (
-      <View
-        style={{
-          justifyContent: "center",
-          alignItems: "center",
-          backgroundColor: "#f1f2f1",
-          padding: 20,
-        }}
-      >
-        <Text style={{ fontSize: 20 }}>Hi, {username}</Text>
-        <Text style={{ paddingTop: 10 }}>It's {liveDate}</Text>
-      </View>
-    );
-  }
-
-  function ShowLoadingSpinner() {
-    return (
-      <View style={styles.container}>
-        <Grid size={48} color="#003e7d" />
-      </View>
-    );
-  }
-
-  function ShowEmptyData() {
+  const ShowEmptyData = () => {
     return (
       <ScrollView
         refreshControl={
@@ -192,8 +172,8 @@ function HomeScreen({ route, navigation }: Props) {
         style={{ flex: 1 }}
         contentContainerStyle={{ flexGrow: 1 }}
       >
-        <WelcomeMessage username={username} />
-        <View style={styles.container}>
+        <WelcomeMessage username={username} liveDate={liveDate} />
+        <View style={styles.mainContainer}>
           <Text style={{ fontSize: 16 }}>
             It seems you don't have any tasks.
           </Text>
@@ -203,59 +183,47 @@ function HomeScreen({ route, navigation }: Props) {
         </View>
       </ScrollView>
     );
-  }
+  };
 
-  function ShowListData() {
+  const ShowListData = () => {
     return (
       <View style={{ flex: 1 }}>
         <FlatList
           data={data}
           extraData={refresh}
-          keyExtractor={(item) => item.tid}
-          ListHeaderComponent={() => <WelcomeMessage username={username} />}
+          keyExtractor={(item) => item.taskId}
+          ListHeaderComponent={() => (
+            <WelcomeMessage username={username} liveDate={liveDate} />
+          )}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
           renderItem={({ item }) => {
             return (
               <TouchableOpacity
-                style={styles.item}
-                onPress={() =>
-                  handleEdit(item.tid, item.title, item.description, item.date)
-                }
+                style={styles.itemContainer}
+                onPress={() => handleEdit(item)}
                 activeOpacity={0.7}
               >
                 <View>
-                  <View style={{ flex: 1, flexDirection: "row" }}>
-                    <View style={{ flex: 1 }}>
+                  <View style={styles.titleAndCancelContainer}>
+                    <View style={styles.itemTitleContainer}>
                       <Text style={styles.itemTitle}>{item.title}</Text>
                     </View>
                     <Entypo
                       name="circle-with-cross"
                       size={24}
                       color="#cfcfcf"
-                      onPress={() => handleDelete(item.tid)}
+                      onPress={() => handleDelete(item.taskId)}
                     />
                   </View>
-                  <View
-                    style={{
-                      backgroundColor: "#cfcfcf",
-                      padding: 10,
-                      borderRadius: 5,
-                      marginHorizontal: -10,
-                      marginBottom: -10,
-                    }}
-                  >
-                    <Text style={styles.itemDesc}>{item.description}</Text>
+                  <View style={styles.itemDescriptionContainer}>
+                    <Text style={styles.itemDescription}>
+                      {item.description}
+                    </Text>
                   </View>
-                  <View
-                    style={{
-                      flex: 1,
-                      marginTop: 20,
-                      marginBottom: -10,
-                    }}
-                  >
-                    <Text style={customStyles.date}>
+                  <View style={styles.deadlineDateContainer}>
+                    <Text style={styles.deadlineDate}>
                       By {moment(item.date).format("Do MMM YYYY").toString()}
                     </Text>
                   </View>
@@ -266,7 +234,7 @@ function HomeScreen({ route, navigation }: Props) {
         />
       </View>
     );
-  }
+  };
 
   return (
     <View style={{ flex: 1 }}>
@@ -279,14 +247,54 @@ function HomeScreen({ route, navigation }: Props) {
       )}
     </View>
   );
-}
+};
 
-const customStyles = StyleSheet.create({
-  date: {
+const styles = StyleSheet.create({
+  mainContainer: {
+    flex: 1,
+    backgroundColor: Colors.background,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  titleAndCancelContainer: {
+    flex: 1,
+    flexDirection: "row",
+  },
+  itemContainer: {
+    flex: 1,
+    backgroundColor: Colors.primary,
+    borderWidth: 2,
+    padding: 20,
+    margin: 12,
+    borderRadius: 8,
+  },
+  itemTitleContainer: {
+    flex: 1,
+  },
+  itemTitle: {
+    fontSize: 23,
+    paddingBottom: 10,
+    color: "white",
+  },
+  itemDescriptionContainer: {
+    backgroundColor: "#cfcfcf",
+    padding: 10,
+    borderRadius: 5,
+    marginHorizontal: -10,
+    marginBottom: -10,
+  },
+  itemDescription: {
+    fontSize: 16,
+  },
+  deadlineDateContainer: {
+    flex: 1,
+    marginTop: 20,
+    marginBottom: -10,
+  },
+  deadlineDate: {
     flex: 1,
     color: "white",
     textAlign: "right",
-    // backgroundColor: "white",
   },
 });
 
